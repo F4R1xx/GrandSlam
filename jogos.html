@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Slam - Partidas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Adicionado o CSS do menu -->
+    <link rel="stylesheet" href="menu.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7fef9; }
+        .form-input {
+            width: 100%; padding: 10px; border: 1px solid #d1d5db;
+            border-radius: 0.375rem; background-color: #f9fafb; transition: border-color 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 1px #10b981; }
+    </style>
+</head>
+<body>
+    <div id="main-content" class="hidden flex h-screen bg-gray-50 overflow-hidden">
+        
+        <!-- Contêiner para o menu reutilizável -->
+        <div id="menu-container"></div>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex items-center justify-between p-4 bg-white border-b md:hidden">
+                <h1 class="text-xl font-bold text-emerald-800">Todas as Partidas</h1>
+                <!-- Botão de hambúrguer para o menu.js -->
+                <button id="hamburger-button" class="text-gray-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+                <div class="container mx-auto">
+                    <div id="matches-container" class="space-y-8">
+                        <!-- Seções de categorias serão inseridas aqui -->
+                    </div>
+                    <div id="no-matches-message" class="text-center py-12 text-gray-500 hidden">
+                        <p class="text-xl">Nenhuma partida agendada no momento.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para Finalizar Partida -->
+    <div id="finalize-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Finalizar Partida</h3>
+            <p class="text-gray-500 mb-6">Insira o placar final da partida.</p>
+            <form id="finalize-form" class="space-y-4">
+                <input type="hidden" id="finalize-match-id">
+                <input type="hidden" id="p1-uid">
+                <input type="hidden" id="p2-uid">
+                
+                <div class="grid grid-cols-2 gap-4 items-end">
+                    <div>
+                        <label id="p1-name-label" for="p1-score" class="block text-sm font-medium text-gray-700 mb-1">Jogador 1</label>
+                        <input type="number" id="p1-score" class="form-input text-center text-lg font-bold" min="0" required>
+                    </div>
+                    <div>
+                        <label id="p2-name-label" for="p2-score" class="block text-sm font-medium text-gray-700 mb-1">Jogador 2</label>
+                        <input type="number" id="p2-score" class="form-input text-center text-lg font-bold" min="0" required>
+                    </div>
+                </div>
+                
+                <div id="finalize-error" class="text-red-500 text-sm h-5"></div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="close-finalize-modal-btn" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 font-semibold">Cancelar</button>
+                    <button type="submit" id="save-finalize-btn" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 font-semibold">Salvar Resultado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading-view" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <svg class="animate-spin h-12 w-12 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+        // Importa a função do menu
+        import { loadMenu } from './menu.js';
+
+        let currentUser = null;
+        let allUsersData = {};
+        const categories = ["Grand Slam", "Master 1000", "Challenger"];
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                // Carrega o menu, passando o ID da página ativa ('jogos')
+                loadMenu('menu-container', 'jogos');
+                listenForDataChanges();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function listenForDataChanges() {
+            const usersRef = ref(db, 'users/');
+            const matchesRef = ref(db, 'matches/');
+
+            onValue(usersRef, (snapshot) => {
+                allUsersData = snapshot.exists() ? snapshot.val() : {};
+            });
+
+            onValue(matchesRef, (snapshot) => {
+                const allMatches = snapshot.exists() ? snapshot.val() : {};
+                if (Object.keys(allUsersData).length > 0) {
+                    renderPage(allMatches);
+                }
+            });
+        }
+        
+        function renderPage(allMatches) {
+            const matchesContainer = document.getElementById('matches-container');
+            const noMatchesMessage = document.getElementById('no-matches-message');
+            matchesContainer.innerHTML = '';
+
+            const scheduledMatches = Object.entries(allMatches).filter(([_, match]) => match.status === 'agendada');
+
+            if (scheduledMatches.length === 0) {
+                noMatchesMessage.classList.remove('hidden');
+                matchesContainer.classList.add('hidden');
+            } else {
+                noMatchesMessage.classList.add('hidden');
+                matchesContainer.classList.remove('hidden');
+                const matchesByCategory = groupMatchesByCategory(scheduledMatches);
+                renderMatches(matchesByCategory);
+            }
+            
+            document.getElementById('loading-view').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        }
+
+        function groupMatchesByCategory(matches) {
+            const grouped = {};
+            matches.forEach(([matchId, matchData]) => {
+                const p1_uid = matchData.participante1_uid;
+                const category = allUsersData[p1_uid]?.category || 'Sem Categoria';
+                if (!grouped[category]) {
+                    grouped[category] = [];
+                }
+                grouped[category].push({ matchId, ...matchData });
+            });
+            return grouped;
+        }
+
+        function renderMatches(matchesByCategory) {
+            const container = document.getElementById('matches-container');
+            container.innerHTML = '';
+            categories.forEach(category => {
+                if (matchesByCategory[category] && matchesByCategory[category].length > 0) {
+                    const categorySection = document.createElement('div');
+                    categorySection.innerHTML = `<h3 class="text-2xl font-bold text-gray-700 mb-4 pb-2 border-b-2 border-emerald-500">${category}</h3>`;
+                    const grid = document.createElement('div');
+                    grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                    
+                    matchesByCategory[category].forEach(match => {
+                        grid.appendChild(createMatchCard(match));
+                    });
+                    
+                    categorySection.appendChild(grid);
+                    container.appendChild(categorySection);
+                }
+            });
+        }
+
+        function createMatchCard(match) {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-5 rounded-xl shadow-md space-y-3';
+            const p1_data = allUsersData[match.participante1_uid];
+            const p2_data = allUsersData[match.participante2_uid];
+            const p1Name = p1_data?.nickname || p1_data?.name || 'Desconhecido';
+            const p2Name = p2_data?.nickname || p2_data?.name || 'Desconhecido';
+            const date = new Date(match.horario).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            card.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <p class="font-bold text-lg text-emerald-700">${p1Name}</p>
+                    <p class="text-sm font-bold text-gray-500">vs</p>
+                    <p class="font-bold text-lg text-emerald-700">${p2Name}</p>
+                </div>
+                <div class="text-sm text-gray-500 border-t pt-3">
+                    <p><strong>Local:</strong> ${match.local}</p>
+                    <p><strong>Horário:</strong> ${date}</p>
+                </div>
+            `;
+            
+            const canFinalize = currentUser && (currentUser.email === 'grandslam@gmail.com' || currentUser.uid === match.participante1_uid || currentUser.uid === match.participante2_uid);
+            if (canFinalize) {
+                const footer = document.createElement('div');
+                footer.className = 'pt-3 border-t flex justify-end';
+                const finalizeBtn = document.createElement('button');
+                finalizeBtn.textContent = 'Finalizar Partida';
+                finalizeBtn.className = 'bg-blue-500 text-white px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm font-semibold';
+                finalizeBtn.onclick = () => openFinalizeModal(match.matchId, {uid: match.participante1_uid, ...p1_data}, {uid: match.participante2_uid, ...p2_data});
+                footer.appendChild(finalizeBtn);
+                card.appendChild(footer);
+            }
+            return card;
+        }
+
+        const modal = document.getElementById('finalize-modal');
+        const finalizeForm = document.getElementById('finalize-form');
+        
+        function openFinalizeModal(matchId, p1, p2) {
+            finalizeForm.reset();
+            document.getElementById('finalize-error').textContent = '';
+            document.getElementById('finalize-match-id').value = matchId;
+            document.getElementById('p1-uid').value = p1.uid;
+            document.getElementById('p2-uid').value = p2.uid;
+            document.getElementById('p1-name-label').textContent = p1.nickname || p1.name;
+            document.getElementById('p2-name-label').textContent = p2.nickname || p2.name;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        document.getElementById('close-finalize-modal-btn').addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+
+        finalizeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const saveBtn = document.getElementById('save-finalize-btn');
+            const errorDiv = document.getElementById('finalize-error');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Salvando...';
+            errorDiv.textContent = '';
+
+            const matchId = document.getElementById('finalize-match-id').value;
+            const p1_uid = document.getElementById('p1-uid').value;
+            const p2_uid = document.getElementById('p2-uid').value;
+            const p1_score = parseInt(document.getElementById('p1-score').value, 10);
+            const p2_score = parseInt(document.getElementById('p2-score').value, 10);
+
+            if (isNaN(p1_score) || isNaN(p2_score) || p1_score < 0 || p2_score < 0 || p1_score === p2_score) {
+                errorDiv.textContent = 'Placar inválido. Os valores devem ser números diferentes e positivos.';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Salvar Resultado';
+                return;
+            }
+
+            const winner_uid = p1_score > p2_score ? p1_uid : p2_uid;
+            const loser_uid = p1_score < p2_score ? p1_uid : p2_uid;
+            const winner_score = Math.max(p1_score, p2_score);
+            const loser_score = Math.min(p1_score, p2_score);
+            
+            const scoreDifference = winner_score - loser_score;
+            const winnerPoints = scoreDifference >= 4 ? 8 : 7;
+            const loserPoints = loser_score;
+
+            try {
+                const winnerDataSnapshot = await get(ref(db, `users/${winner_uid}`));
+                const loserDataSnapshot = await get(ref(db, `users/${loser_uid}`));
+                const winnerCurrentPoints = winnerDataSnapshot.val().points || 0;
+                const loserCurrentPoints = loserDataSnapshot.val().points || 0;
+
+                const updates = {};
+                updates[`/matches/${matchId}/status`] = 'finalizada';
+                updates[`/matches/${matchId}/score`] = `${p1_score} x ${p2_score}`;
+                updates[`/matches/${matchId}/winner_uid`] = winner_uid;
+                updates[`/users/${winner_uid}/points`] = winnerCurrentPoints + winnerPoints;
+                updates[`/users/${loser_uid}/points`] = loserCurrentPoints + loserPoints;
+
+                await update(ref(db), updates);
+                
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+
+            } catch (error) {
+                console.error("Erro ao finalizar partida:", error);
+                errorDiv.textContent = 'Ocorreu um erro ao salvar.';
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Salvar Resultado';
+            }
+        });
+    </script>
+</body>
+</html>

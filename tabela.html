@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Slam - Tabela de Classificação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Adicionado o CSS do menu -->
+    <link rel="stylesheet" href="menu.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7fef9; }
+    </style>
+</head>
+<body>
+    <div id="main-content" class="hidden flex h-screen bg-gray-50 overflow-hidden">
+        
+        <!-- Contêiner para o menu reutilizável -->
+        <div id="menu-container"></div>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex items-center justify-between p-4 bg-white border-b md:hidden">
+                <h1 class="text-xl font-bold text-emerald-800">Tabela</h1>
+                <!-- Botão de hambúrguer para o menu.js -->
+                <button id="hamburger-button" class="text-gray-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+                <div class="container mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Tabela de Classificação</h2>
+                    <div id="rankings-container" class="space-y-10">
+                        <!-- Tabelas de ranking serão inseridas aqui -->
+                    </div>
+                    <div id="no-data-message" class="text-center py-12 text-gray-500 hidden">
+                        <p class="text-xl">Ainda não há dados suficientes para gerar a tabela.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="loading-view" class="fixed inset-0 bg-white flex items-center justify-center z-50"><svg class="animate-spin h-12 w-12 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>
+
+    <script type="module">
+        import { auth, db } from './firebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { ref, get } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+        // Importa a função do menu
+        import { loadMenu } from './menu.js';
+
+        const categories = ["Grand Slam", "Master 1000", "Challenger"];
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Carrega o menu, passando o ID da página ativa ('tabela')
+                loadMenu('menu-container', 'tabela');
+                loadRankings();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        async function loadRankings() {
+            try {
+                const usersRef = ref(db, 'users/');
+                const matchesRef = ref(db, 'matches/');
+                const [usersSnapshot, matchesSnapshot] = await Promise.all([get(usersRef), get(matchesRef)]);
+
+                if (!usersSnapshot.exists()) {
+                    showNoDataMessage();
+                    return;
+                }
+
+                const allUsers = usersSnapshot.val();
+                const allMatches = matchesSnapshot.exists() ? matchesSnapshot.val() : {};
+                
+                const playerStats = calculatePlayerStats(allUsers, allMatches);
+                const rankings = groupAndSortPlayers(playerStats);
+                
+                renderRankings(rankings);
+
+            } catch (error) {
+                console.error("Erro ao carregar rankings:", error);
+                showNoDataMessage("Erro ao carregar dados.");
+            } finally {
+                document.getElementById('loading-view').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+            }
+        }
+
+        function calculatePlayerStats(users, matches) {
+            const stats = {};
+            for (const uid in users) {
+                if (users[uid].email !== 'grandslam@gmail.com') {
+                    stats[uid] = {
+                        uid: uid,
+                        name: users[uid].nickname || users[uid].name,
+                        points: users[uid].points || 0,
+                        category: users[uid].category || 'Sem Categoria',
+                        wins: 0,
+                        losses: 0,
+                        games: 0,
+                        totalGamesMade: 0
+                    };
+                }
+            }
+            
+            for (const matchId in matches) {
+                const match = matches[matchId];
+                if (match.status === 'finalizada') {
+                    const p1Id = match.participante1_uid;
+                    const p2Id = match.participante2_uid;
+                    const winnerId = match.winner_uid;
+
+                    if (stats[p1Id]) stats[p1Id].games++;
+                    if (stats[p2Id]) stats[p2Id].games++;
+                    
+                    if (winnerId) {
+                        const loserId = winnerId === p1Id ? p2Id : p1Id;
+                        if (stats[winnerId]) stats[winnerId].wins++;
+                        if (stats[loserId]) stats[loserId].losses++;
+                    }
+
+                    if (match.score && typeof match.score === 'string') {
+                        const scores = match.score.split('x').map(s => parseInt(s.trim(), 10));
+                        if (scores.length === 2 && !isNaN(scores[0]) && !isNaN(scores[1])) {
+                            if (stats[p1Id]) {
+                                stats[p1Id].totalGamesMade += scores[0];
+                            }
+                            if (stats[p2Id]) {
+                                stats[p2Id].totalGamesMade += scores[1];
+                            }
+                        }
+                    }
+                }
+            }
+            return Object.values(stats);
+        }
+
+        function groupAndSortPlayers(playerStats) {
+            const grouped = {};
+            categories.forEach(cat => grouped[cat] = []);
+            
+            playerStats.forEach(player => {
+                if (grouped[player.category]) {
+                    grouped[player.category].push(player);
+                }
+            });
+
+            for (const category in grouped) {
+                grouped[category].sort((a, b) => b.points - a.points);
+            }
+            return grouped;
+        }
+
+        function renderRankings(rankings) {
+            const container = document.getElementById('rankings-container');
+            container.innerHTML = '';
+            let hasData = false;
+
+            categories.forEach(category => {
+                const players = rankings[category];
+                if (players && players.length > 0) {
+                    hasData = true;
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">${category}</h3>
+                        <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+                            <table class="w-full min-w-max text-left">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="p-4 bg-gray-50 text-sm font-semibold text-gray-600">#</th>
+                                        <th class="p-4 bg-gray-50 text-sm font-semibold text-gray-600">Jogador</th>
+                                        <th class="p-4 bg-gray-50 text-sm font-semibold text-gray-600 text-center">Pontos</th>
+                                        <th class="p-4 bg-gray-50 text-sm font-semibold text-gray-600 text-center">Vitórias</th>
+                                        <th class="p-4 bg-gray-50 text-sm font-semibold text-gray-600 text-center">Derrotas</th>
+                                        <th class="p-4 bg-gray-50 text-sm font-semibold text-gray-600 text-center">Jogos</th>
+                                        <th class="p-4 bg-gray-50 text-sm font-semibold text-gray-600 text-center">Games Feitos</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${players.map((player, index) => `
+                                        <tr class="border-b">
+                                            <td class="p-4 font-bold text-gray-700">${index + 1}</td>
+                                            <td class="p-4 font-semibold text-emerald-800">${player.name}</td>
+                                            <td class="p-4 font-bold text-center">${player.points}</td>
+                                            <td class="p-4 text-center text-green-600">${player.wins}</td>
+                                            <td class="p-4 text-center text-red-600">${player.losses}</td>
+                                            <td class="p-4 text-center">${player.games}</td>
+                                            <td class="p-4 font-semibold text-center text-gray-700">${player.totalGamesMade}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    container.appendChild(section);
+                }
+            });
+
+            if (!hasData) showNoDataMessage();
+        }
+
+        function showNoDataMessage(message = "Ainda não há dados suficientes para gerar a tabela.") {
+            const msgEl = document.getElementById('no-data-message');
+            msgEl.textContent = message;
+            msgEl.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

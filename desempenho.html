@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Slam - Meu Desempenho</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="menu.css">
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --primary-color: #0d9488; /* Teal-600 */
+            --border-color: rgba(0, 0, 0, 0.05);
+        }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--bg-color);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23a1a1aa' fill-opacity='0.05'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h16v9h1v-9h9v9h1v-9h9v9h1v-9h9v9h1v-9h9v9h1v-9h9v9h1v-9h9v9h1v-9h9v9h1v-9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0h1v5h9V0h1v5h9V0h1v5h9V0h1v5h9V0h1v5h9V0h1v5h9V0h1v5h9V0h1v5h9V0h1v6H0V5h6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+        }
+        .ph { font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div id="main-content" class="hidden flex h-screen bg-gray-50 overflow-hidden">
+        
+        <div id="menu-container"></div>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex items-center justify-between p-4 bg-transparent md:hidden">
+                <h1 class="text-xl font-bold text-emerald-800">Meu Desempenho</h1>
+                <button id="hamburger-button" class="text-gray-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-6 lg:p-8">
+                <div class="container mx-auto">
+                    <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 mb-8">Meu Desempenho</h2>
+
+                    <!-- Chart -->
+                    <div class="glass-card rounded-2xl p-6 md:p-8 mb-8">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Evolução da Pontuação</h3>
+                        <div class="relative h-80">
+                            <canvas id="performance-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="glass-card rounded-2xl p-5">
+                            <p class="text-sm text-gray-500">Taxa de Vitória</p>
+                            <p id="stat-win-rate" class="text-3xl font-bold text-teal-600 mt-1">0%</p>
+                        </div>
+                         <div class="glass-card rounded-2xl p-5">
+                            <p class="text-sm text-gray-500">Média de Pontos / Jogo</p>
+                            <p id="stat-avg-points" class="text-3xl font-bold text-gray-800 mt-1">0</p>
+                        </div>
+                        <div class="glass-card rounded-2xl p-5">
+                            <p class="text-sm text-gray-500">Meu Patinho</p>
+                            <p id="stat-best-opponent" class="text-xl font-bold text-gray-800 mt-2 truncate">N/A</p>
+                        </div>
+                        <div class="glass-card rounded-2xl p-5">
+                            <p class="text-sm text-gray-500">Adversário Mais Difícil</p>
+                            <p id="stat-toughest-opponent" class="text-xl font-bold text-gray-800 mt-2 truncate">N/A</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="loading-view" class="fixed inset-0 bg-white flex items-center justify-center z-[100]">
+        <svg class="animate-spin h-12 w-12 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8
+ 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { ref, get } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+        import { loadMenu } from './menu.js';
+
+        let currentUser = null;
+        let chartInstance = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                loadMenu('menu-container', 'desempenho');
+                loadPerformanceData();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        const loadPerformanceData = async () => {
+            const usersRef = ref(db, 'users/');
+            const matchesRef = ref(db, 'matches/');
+            const [usersSnapshot, matchesSnapshot] = await Promise.all([get(usersRef), get(matchesRef)]);
+
+            const allUsersData = usersSnapshot.exists() ? usersSnapshot.val() : {};
+            const allMatchesData = matchesSnapshot.exists() ? matchesSnapshot.val() : {};
+            
+            processPerformanceData(allUsersData, allMatchesData);
+            
+            document.getElementById('loading-view').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        };
+
+        const processPerformanceData = (allUsers, allMatches) => {
+            const myFinishedMatches = Object.values(allMatches)
+                .filter(m => m.status === 'finalizada' && (m.participante1_uid === currentUser.uid || m.participante2_uid === currentUser.uid))
+                .sort((a, b) => new Date(a.horario) - new Date(b.horario));
+
+            if (myFinishedMatches.length === 0) {
+                // Handle case with no matches
+                return;
+            }
+
+            // Calculate Stats
+            calculateAndDisplayKPIs(myFinishedMatches, allUsers);
+            
+            // Prepare and render chart
+            prepareChartData(myFinishedMatches);
+        };
+
+        const calculateAndDisplayKPIs = (matches, allUsers) => {
+            const totalGames = matches.length;
+            const wins = matches.filter(m => m.winner_uid === currentUser.uid).length;
+            const winRate = totalGames > 0 ? ((wins / totalGames) * 100).toFixed(0) : 0;
+            document.getElementById('stat-win-rate').textContent = `${winRate}%`;
+
+            const totalPointsEarned = matches.reduce((acc, match) => {
+                const scores = match.score.split('x').map(s => parseInt(s.trim()));
+                const p1_score = match.participante1_uid === currentUser.uid ? scores[0] : scores[1];
+                const p2_score = match.participante1_uid === currentUser.uid ? scores[1] : scores[0];
+                
+                if (match.winner_uid === currentUser.uid) {
+                    const diff = Math.abs(p1_score - p2_score);
+                    return acc + (diff >= 4 ? 8 : 7);
+                } else {
+                    return acc + Math.min(p1_score, p2_score);
+                }
+            }, 0);
+            
+            const avgPoints = totalGames > 0 ? (totalPointsEarned / totalGames).toFixed(1) : 0;
+            document.getElementById('stat-avg-points').textContent = avgPoints;
+
+            // Opponent stats
+            const opponentStats = {};
+            matches.forEach(m => {
+                const opponentUID = m.participante1_uid === currentUser.uid ? m.participante2_uid : m.participante1_uid;
+                if (!opponentStats[opponentUID]) {
+                    opponentStats[opponentUID] = { wins: 0, losses: 0 };
+                }
+                if (m.winner_uid === currentUser.uid) {
+                    opponentStats[opponentUID].wins++;
+                } else {
+                    opponentStats[opponentUID].losses++;
+                }
+            });
+
+            const bestOpponent = Object.entries(opponentStats).sort((a, b) => b[1].wins - a[1].wins)[0];
+            const toughestOpponent = Object.entries(opponentStats).sort((a, b) => b[1].losses - a[1].losses)[0];
+
+            if (bestOpponent && bestOpponent[1].wins > 0) {
+                const opponentName = allUsers[bestOpponent[0]]?.nickname || allUsers[bestOpponent[0]]?.name;
+                document.getElementById('stat-best-opponent').textContent = opponentName;
+            }
+             if (toughestOpponent && toughestOpponent[1].losses > 0) {
+                const opponentName = allUsers[toughestOpponent[0]]?.nickname || allUsers[toughestOpponent[0]]?.name;
+                document.getElementById('stat-toughest-opponent').textContent = opponentName;
+            }
+        };
+
+        const prepareChartData = (matches) => {
+            let cumulativePoints = 0;
+            const chartData = {
+                labels: ['Início'],
+                points: [0]
+            };
+
+            matches.forEach(match => {
+                const scores = match.score.split('x').map(s => parseInt(s.trim()));
+                const p1_score = match.participante1_uid === currentUser.uid ? scores[0] : scores[1];
+                const p2_score = match.participante1_uid === currentUser.uid ? scores[1] : scores[0];
+                
+                let pointsEarned = 0;
+                if (match.winner_uid === currentUser.uid) {
+                    const diff = Math.abs(p1_score - p2_score);
+                    pointsEarned = diff >= 4 ? 8 : 7;
+                } else {
+                    pointsEarned = Math.min(p1_score, p2_score);
+                }
+                cumulativePoints += pointsEarned;
+
+                chartData.labels.push(new Date(match.horario).toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'}));
+                chartData.points.push(cumulativePoints);
+            });
+
+            renderChart(chartData);
+        };
+
+        const renderChart = (data) => {
+            const ctx = document.getElementById('performance-chart').getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Pontuação Acumulada',
+                        data: data.points,
+                        borderColor: 'rgb(13, 148, 136)',
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: 'rgb(13, 148, 136)',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: 'rgb(13, 148, 136)',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        },
+                        x: {
+                             grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>

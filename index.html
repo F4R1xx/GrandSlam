@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Slam - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F0FDF4; }
+        .btn-primary { background-image: linear-gradient(to right, #10B981, #059669); }
+        .btn-primary:hover { background-image: linear-gradient(to right, #059669, #047857); }
+    </style>
+</head>
+<body class="flex justify-center items-start sm:items-center min-h-screen p-4 pt-12 sm:pt-4">
+
+    <div class="w-full max-w-md">
+        <!-- Tela de Carregamento -->
+        <div id="loading-container" class="view-container text-center">
+            <svg class="animate-spin h-12 w-12 text-emerald-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <p class="mt-4 text-lg font-medium text-emerald-800">Verificando acesso...</p>
+        </div>
+
+        <!-- Tela de Autenticação (Login) -->
+        <div id="auth-container" class="view-container bg-white p-8 rounded-2xl shadow-xl hidden">
+            <div class="flex justify-center mb-4">
+                <svg class="w-16 h-16 text-lime-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="currentColor"/><path d="M11.5 76C23.5 56.5 47 48.5 50 48.5C53 48.5 76.5 56.5 88.5 76" stroke="white" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/><path d="M11.5 24C23.5 43.5 47 51.5 50 51.5C53 51.5 76.5 43.5 88.5 24" stroke="white" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/></svg>
+            </div>
+            <h1 class="text-4xl font-extrabold text-center text-emerald-800 mb-2">Grand Slam</h1>
+            <p class="text-center text-gray-500 mb-8">Sua academia de Tênis.</p>
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition" placeholder="seu@email.com">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                <input type="password" id="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition" placeholder="••••••••">
+            </div>
+            <div id="auth-error" class="text-red-500 text-sm text-center mb-4 h-5"></div>
+            <button id="login-button" class="w-full text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-transform transform hover:scale-105 btn-primary shadow-lg mb-3">Entrar</button>
+            <div class="relative flex py-3 items-center"><div class="flex-grow border-t border-gray-300"></div><span class="flex-shrink mx-4 text-gray-400 text-sm">OU</span><div class="flex-grow border-t border-gray-300"></div></div>
+            <button id="google-signin-button" class="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg font-semibold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition mb-4">
+                <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.99,35.508,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                Entrar com Google
+            </button>
+            <p class="text-center text-sm">Não tem uma conta? <a href="#" id="go-to-register-button" class="font-semibold text-emerald-600 hover:text-emerald-500">Crie agora</a></p>
+        </div>
+
+        <!-- Tela de Cadastro -->
+        <div id="register-container" class="view-container bg-white p-8 rounded-2xl shadow-xl hidden">
+            <h2 class="text-3xl font-bold text-emerald-800 mb-2">Crie sua Conta</h2>
+            <p class="text-gray-600 mb-8">É rápido e fácil. Vamos começar!</p>
+            <div class="mb-4"><label for="register-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" id="register-email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition" placeholder="seu@email.com"></div>
+            <div class="mb-4"><label for="register-password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label><input type="password" id="register-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition" placeholder="Mínimo 6 caracteres"></div>
+            <div class="mb-6"><label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label><input type="password" id="confirm-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition" placeholder="Repita a senha"></div>
+            <div id="register-error" class="text-red-500 text-sm text-center mb-4 h-5"></div>
+            <button id="submit-register-button" class="w-full text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-transform transform hover:scale-105 btn-primary shadow-lg">Criar Conta</button>
+            <p class="text-center text-sm mt-4">Já tem uma conta? <a href="#" id="back-to-login-button" class="font-semibold text-emerald-600 hover:text-emerald-500">Faça login</a></p>
+        </div>
+
+        <!-- Tela de Detalhes (Primeiro Login) -->
+        <div id="details-container" class="view-container bg-white p-8 rounded-2xl shadow-xl hidden">
+            <h2 class="text-3xl font-bold text-emerald-800 mb-2">Seu Perfil de Jogador</h2>
+            <p class="text-gray-600 mb-8">Complete seu cadastro para entrar em quadra.</p>
+            <div class="mb-4"><label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label><input type="text" id="name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition"></div>
+            <div class="mb-4"><label for="nickname" class="block text-sm font-medium text-gray-700 mb-1">Apelido <span class="text-gray-400">(opcional)</span></label><input type="text" id="nickname" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition"></div>
+            <div class="mb-6"><label for="age" class="block text-sm font-medium text-gray-700 mb-1">Idade</label><input type="number" id="age" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 transition" placeholder="Sua idade"></div>
+            <div id="details-error" class="text-red-500 text-sm text-center mb-4 h-5"></div>
+            <button id="save-details-button" class="w-full text-white py-3 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-transform transform hover:scale-105 btn-primary shadow-lg">Salvar e Entrar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db, googleProvider } from './firebase.js';
+        import { 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signInWithPopup,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { ref, set, get } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
+        // --- Gerenciamento de Telas ---
+        const loadingContainer = document.getElementById('loading-container');
+        const authContainer = document.getElementById('auth-container');
+        const registerContainer = document.getElementById('register-container');
+        const detailsContainer = document.getElementById('details-container');
+        const views = [loadingContainer, authContainer, registerContainer, detailsContainer];
+        
+        /**
+         * CORREÇÃO: Função robusta para mostrar uma única tela e esconder as outras.
+         * Garante que apenas uma tela esteja visível por vez, prevenindo bugs de layout.
+         */
+        const showView = (viewToShow) => {
+            views.forEach(view => {
+                if (view !== viewToShow) {
+                    view.classList.add('hidden');
+                }
+            });
+            viewToShow.classList.remove('hidden');
+        };
+
+        // --- Referências aos Elementos ---
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginButton = document.getElementById('login-button');
+        const nameInput = document.getElementById('name');
+        const nicknameInput = document.getElementById('nickname');
+        const ageInput = document.getElementById('age');
+        const authError = document.getElementById('auth-error');
+        const registerError = document.getElementById('register-error');
+        const detailsError = document.getElementById('details-error');
+
+        // --- Lógica de Autenticação Principal ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userRef = ref(db, 'users/' + user.uid);
+                const snapshot = await get(userRef);
+                if (snapshot.exists()) {
+                    window.location.href = 'home.html';
+                } else {
+                    if (user.displayName) nameInput.value = user.displayName;
+                    showView(detailsContainer);
+                }
+            } else {
+                showView(authContainer);
+            }
+        });
+
+        // --- Event Listeners ---
+        loginButton.addEventListener('click', async () => {
+            if (!emailInput.value || !passwordInput.value) {
+                authError.textContent = 'Preencha email e senha.'; return;
+            }
+            authError.textContent = '';
+            showView(loadingContainer);
+            try {
+                await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+            } catch (error) {
+                showView(authContainer);
+                authError.textContent = 'Email ou senha inválidos.';
+            }
+        });
+
+        const handleLoginOnEnter = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                loginButton.click();
+            }
+        };
+        emailInput.addEventListener('keydown', handleLoginOnEnter);
+        passwordInput.addEventListener('keydown', handleLoginOnEnter);
+
+        document.getElementById('google-signin-button').addEventListener('click', async () => {
+            showView(loadingContainer);
+            try {
+                await signInWithPopup(auth, googleProvider);
+            } catch (error) {
+                showView(authContainer);
+                authError.textContent = 'Falha ao autenticar com Google.';
+            }
+        });
+        
+        document.getElementById('go-to-register-button').addEventListener('click', (e) => {
+            e.preventDefault(); showView(registerContainer);
+        });
+
+        document.getElementById('back-to-login-button').addEventListener('click', (e) => {
+            e.preventDefault(); showView(authContainer);
+        });
+
+        document.getElementById('submit-register-button').addEventListener('click', async () => {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            if (password !== document.getElementById('confirm-password').value) {
+                registerError.textContent = 'As senhas não conferem.'; return;
+            }
+            if (password.length < 6) {
+                registerError.textContent = 'A senha deve ter no mínimo 6 caracteres.'; return;
+            }
+            registerError.textContent = '';
+            showView(loadingContainer);
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showView(registerContainer);
+                registerError.textContent = error.code === 'auth/email-already-in-use' ? 'Este email já está em uso.' : 'Ocorreu um erro ao cadastrar.';
+            }
+        });
+
+        document.getElementById('save-details-button').addEventListener('click', async () => {
+            if (!nameInput.value.trim() || !ageInput.value.trim()) {
+                detailsError.textContent = 'Por favor, preencha Nome e Idade.'; return;
+            }
+            detailsError.textContent = '';
+            showView(loadingContainer);
+            const user = auth.currentUser;
+            if (user) {
+                const userRef = ref(db, 'users/' + user.uid);
+                try {
+                    await set(userRef, { 
+                        name: nameInput.value.trim(), 
+                        age: ageInput.value.trim(), 
+                        nickname: nicknameInput.value.trim(),
+                        email: user.email 
+                    });
+                    window.location.href = 'home.html';
+                } catch (error) {
+                    showView(detailsContainer);
+                    detailsError.textContent = 'Não foi possível salvar os dados.';
+                }
+            }
+        });
+        
+        // Estado inicial da página
+        showView(loadingContainer);
+    </script>
+</body>
+</html>
