@@ -9,22 +9,23 @@
     <link rel="icon" type="image/png" href="/icon.png">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Adicionado o CSS do menu -->
     <link rel="stylesheet" href="menu.css">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f7fef9; }
+        .highlight-row {
+            background-color: #ecfdf5; /* emerald-50 */
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
     <div id="main-content" class="hidden flex h-screen bg-gray-50 overflow-hidden">
         
-        <!-- Contêiner para o menu reutilizável -->
         <div id="menu-container"></div>
 
         <div class="flex-1 flex flex-col overflow-hidden">
             <header class="flex items-center justify-between p-4 bg-white border-b md:hidden">
-                <h1 class="text-xl font-bold text-emerald-800">Tabela</h1>
-                <!-- Botão de hambúrguer para o menu.js -->
+                <h1 class="text-xl font-bold text-emerald-800">Tabela de Classificação</h1>
                 <button id="hamburger-button" class="text-gray-500 focus:outline-none">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 </button>
@@ -34,8 +35,7 @@
                 <div class="container mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Tabela de Classificação</h2>
                     <div id="rankings-container" class="space-y-10">
-                        <!-- Tabelas de ranking serão inseridas aqui -->
-                    </div>
+                        </div>
                     <div id="no-data-message" class="text-center py-12 text-gray-500 hidden">
                         <p class="text-xl">Ainda não há dados suficientes para gerar a tabela.</p>
                     </div>
@@ -50,14 +50,15 @@
         import { auth, db } from './firebase.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { ref, get } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
-        // Importa a função do menu
         import { loadMenu } from './menu.js';
 
-        const categories = ["Grand Slam", "Master 1000", "Challenger"];
+        let currentUserId = null;
+        // Ordem definida para as categorias
+        const categoriesOrder = ["Grand Slam", "Master 1000", "Challenger"];
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Carrega o menu, passando o ID da página ativa ('tabela')
+                currentUserId = user.uid;
                 loadMenu('menu-container', 'tabela');
                 loadRankings();
             } else {
@@ -80,9 +81,16 @@
                 const allMatches = matchesSnapshot.exists() ? matchesSnapshot.val() : {};
                 
                 const playerStats = calculatePlayerStats(allUsers, allMatches);
-                const rankings = groupAndSortPlayers(playerStats);
                 
-                renderRankings(rankings);
+                // Agrupa os jogadores por categoria
+                const rankingsByCategory = groupPlayers(playerStats);
+                
+                // Ordena os jogadores dentro de cada categoria por pontos
+                for (const category in rankingsByCategory) {
+                    rankingsByCategory[category].sort((a, b) => b.points - a.points);
+                }
+                
+                renderRankings(rankingsByCategory);
 
             } catch (error) {
                 console.error("Erro ao carregar rankings:", error);
@@ -96,6 +104,7 @@
         function calculatePlayerStats(users, matches) {
             const stats = {};
             for (const uid in users) {
+                // Filtra o usuário admin
                 if (users[uid].email !== 'grandslam@gmail.com') {
                     stats[uid] = {
                         uid: uid,
@@ -129,12 +138,8 @@
                     if (match.score && typeof match.score === 'string') {
                         const scores = match.score.split('x').map(s => parseInt(s.trim(), 10));
                         if (scores.length === 2 && !isNaN(scores[0]) && !isNaN(scores[1])) {
-                            if (stats[p1Id]) {
-                                stats[p1Id].totalGamesMade += scores[0];
-                            }
-                            if (stats[p2Id]) {
-                                stats[p2Id].totalGamesMade += scores[1];
-                            }
+                            if (stats[p1Id]) stats[p1Id].totalGamesMade += scores[0];
+                            if (stats[p2Id]) stats[p2Id].totalGamesMade += scores[1];
                         }
                     }
                 }
@@ -142,31 +147,51 @@
             return Object.values(stats);
         }
 
-        function groupAndSortPlayers(playerStats) {
+        function groupPlayers(playerStats) {
             const grouped = {};
-            categories.forEach(cat => grouped[cat] = []);
+            // Inicializa as categorias para manter a ordem
+            categoriesOrder.forEach(cat => grouped[cat] = []);
             
             playerStats.forEach(player => {
-                if (grouped[player.category]) {
-                    grouped[player.category].push(player);
+                // Garante que a categoria do jogador exista no objeto
+                if (!grouped[player.category]) {
+                    grouped[player.category] = [];
                 }
+                grouped[player.category].push(player);
             });
-
-            for (const category in grouped) {
-                grouped[category].sort((a, b) => b.points - a.points);
-            }
             return grouped;
         }
 
-        function renderRankings(rankings) {
+        function renderRankings(rankingsByCategory) {
             const container = document.getElementById('rankings-container');
             container.innerHTML = '';
             let hasData = false;
+            let rankingPosition = 1; // Contador de ranking geral
 
-            categories.forEach(category => {
-                const players = rankings[category];
+            // Itera na ordem definida
+            categoriesOrder.forEach(category => {
+                const players = rankingsByCategory[category];
+
                 if (players && players.length > 0) {
                     hasData = true;
+                    
+                    const tableRows = players.map(player => {
+                        const isCurrentUser = player.uid === currentUserId;
+                        const row = `
+                            <tr class="border-b ${isCurrentUser ? 'highlight-row' : ''}">
+                                <td class="p-4 font-bold text-gray-700">${rankingPosition}</td>
+                                <td class="p-4 font-semibold text-emerald-800">${player.name}</td>
+                                <td class="p-4 font-bold text-center">${player.points}</td>
+                                <td class="p-4 text-center text-green-600">${player.wins}</td>
+                                <td class="p-4 text-center text-red-600">${player.losses}</td>
+                                <td class="p-4 text-center">${player.games}</td>
+                                <td class="p-4 font-semibold text-center text-gray-700">${player.totalGamesMade}</td>
+                            </tr>
+                        `;
+                        rankingPosition++; // Incrementa o contador para o próximo jogador
+                        return row;
+                    }).join('');
+
                     const section = document.createElement('div');
                     section.innerHTML = `
                         <h3 class="text-2xl font-bold text-gray-700 mb-4">${category}</h3>
@@ -184,17 +209,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${players.map((player, index) => `
-                                        <tr class="border-b">
-                                            <td class="p-4 font-bold text-gray-700">${index + 1}</td>
-                                            <td class="p-4 font-semibold text-emerald-800">${player.name}</td>
-                                            <td class="p-4 font-bold text-center">${player.points}</td>
-                                            <td class="p-4 text-center text-green-600">${player.wins}</td>
-                                            <td class="p-4 text-center text-red-600">${player.losses}</td>
-                                            <td class="p-4 text-center">${player.games}</td>
-                                            <td class="p-4 font-semibold text-center text-gray-700">${player.totalGamesMade}</td>
-                                        </tr>
-                                    `).join('')}
+                                    ${tableRows}
                                 </tbody>
                             </table>
                         </div>
