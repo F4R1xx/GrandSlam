@@ -56,6 +56,7 @@
 
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-light p-6 lg:p-8">
                 <div class="container mx-auto">
+                    <!-- Cabeçalho -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                         <div>
                             <h2 id="welcome-message" class="text-3xl lg:text-4xl font-bold text-gray-800">Carregando...</h2>
@@ -67,8 +68,11 @@
                         </button>
                     </div>
 
+                    <!-- Grid Principal -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Coluna Esquerda (Principal) -->
                         <div class="lg:col-span-2 space-y-8">
+                            <!-- KPIs -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                                 <div class="kpi-card"><p class="text-sm text-gray-500">Ranking</p><p id="stat-ranking" class="text-3xl font-bold text-teal-600 mt-1">N/A</p></div>
                                 <div class="kpi-card"><p class="text-sm text-gray-500">Pontuação</p><p id="stat-points" class="text-3xl font-bold text-gray-800 mt-1">0</p></div>
@@ -76,28 +80,36 @@
                                 <div class="kpi-card"><p class="text-sm text-gray-500">Sequência</p><p id="stat-streak" class="text-3xl font-bold text-gray-800 mt-1">-</p></div>
                             </div>
 
+                            <!-- Próxima Partida e Últimos Jogos -->
                             <div class="kpi-card">
                                 <h3 class="text-xl font-bold text-gray-800 mb-4">Agenda</h3>
                                 <div id="next-match-container" class="bg-emerald-50 border-2 border-emerald-200 p-5 rounded-lg mb-6">
-                                    </div>
+                                    <!-- Conteúdo do próximo jogo aqui -->
+                                </div>
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3">Últimas Partidas</h4>
                                     <div id="recent-matches-container" class="space-y-3">
-                                        </div>
+                                        <!-- Lista de partidas recentes aqui -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Coluna Direita (Social) -->
                         <div class="space-y-8">
+                            <!-- Feed de Atividade -->
                             <div class="kpi-card">
                                 <h3 class="text-xl font-bold text-gray-800 mb-4">Feed da Categoria</h3>
                                 <div id="activity-feed-container" class="space-y-4">
-                                    </div>
+                                    <!-- Itens do feed aqui -->
+                                </div>
                             </div>
-                            <div class="kpi-card">
+                            <!-- Mini Ranking -->
+                             <div class="kpi-card">
                                 <h3 class="text-xl font-bold text-gray-800 mb-4">Top 5 - Categoria</h3>
                                 <div id="mini-ranking-container" class="space-y-3">
-                                     </div>
+                                     <!-- Itens do ranking aqui -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -106,6 +118,7 @@
         </div>
     </div>
     
+    <!-- Modal de Desafio (sem alterações) -->
     <div id="challenge-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8">
             <h3 class="text-2xl font-bold text-gray-800 mb-6">Criar Desafio</h3>
@@ -133,7 +146,7 @@
         let currentUserData = null;
         let allUsersData = {};
         let allMatchesData = {};
-        let isDataProcessed = false; // Flag para controlar a renderização
+        let isInitialLoadComplete = false; 
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -154,34 +167,28 @@
                     currentUserData = { uid, ...allUsersData[uid] };
                     processAllData();
                 } else {
-                    // Se o usuário não existe no DB, pode ser um primeiro login, redireciona ou trata
                     window.location.href = 'index.html';
                 }
-            });
+            }, { onlyOnce: false }); // Escuta contínua
 
             onValue(matchesRef, (snapshot) => {
                 allMatchesData = snapshot.exists() ? snapshot.val() : {};
                 processAllData();
-            });
+            }, { onlyOnce: false }); // Escuta contínua
         }
         
         function processAllData() {
-            // **CORREÇÃO:** A condição agora só checa o essencial para começar.
-            // A página deve carregar mesmo sem partidas (allMatchesData pode estar vazio).
             if (!currentUserData || !allUsersData) {
                 return;
             }
-
-            // Evita re-renderizações desnecessárias
-            if(isDataProcessed) return;
             
             displayDashboard();
             
-            const loadingView = document.getElementById('loading-view');
-            if (!loadingView.classList.contains('hidden')) {
+            if (!isInitialLoadComplete) {
+                const loadingView = document.getElementById('loading-view');
                 loadingView.classList.add('hidden');
                 document.getElementById('user-panel').classList.remove('hidden');
-                isDataProcessed = true; // Marca que os dados iniciais foram processados
+                isInitialLoadComplete = true; 
             }
         }
 
@@ -211,7 +218,6 @@
             document.getElementById('stat-points').textContent = currentUserData.points || 0;
             document.getElementById('stat-win-loss').innerHTML = `${wins}/${losses} <span class="text-base text-gray-500 font-medium">(${winRate}%)</span>`;
 
-            // Ranking
             if (currentUserData.category) {
                 const playersInCategory = Object.values(allUsersData)
                     .filter(u => u.category === currentUserData.category)
@@ -220,7 +226,6 @@
                 document.getElementById('stat-ranking').textContent = myRank > 0 ? `#${myRank}` : 'N/A';
             }
             
-            // Streak
             let streakCount = 0;
             let currentStreakType = '';
             if (finished.length > 0) {
@@ -240,20 +245,26 @@
 
         function displayNextMatch(myMatches) {
             const container = document.getElementById('next-match-container');
-            const upcomingMatch = myMatches.find(m => m.status === 'agendada' && new Date(m.horario) > new Date());
             
-            if (upcomingMatch) {
-                const opponentUID = upcomingMatch.participante1_uid === currentUserData.uid ? upcomingMatch.participante2_uid : upcomingMatch.participante1_uid;
+            // **CORREÇÃO APLICADA AQUI**
+            const upcomingMatches = myMatches
+                .filter(m => m.status === 'agendada' && new Date(m.horario) > new Date())
+                .sort((a, b) => new Date(a.horario) - new Date(b.horario)); // Ordena do mais próximo para o mais distante
+
+            const nextMatch = upcomingMatches[0]; // Pega o primeiro da lista ordenada
+            
+            if (nextMatch) {
+                const opponentUID = nextMatch.participante1_uid === currentUserData.uid ? nextMatch.participante2_uid : nextMatch.participante1_uid;
                 const opponent = allUsersData[opponentUID];
                 const opponentName = opponent?.nickname || opponent?.name || 'Adversário';
-                const date = new Date(upcomingMatch.horario);
+                const date = new Date(nextMatch.horario);
 
                 container.innerHTML = `
                     <p class="text-sm font-semibold text-gray-600 mb-2">PRÓXIMO CONFRONTO</p>
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xl font-bold text-gray-800">vs ${opponentName}</p>
-                            <p class="text-gray-500">${upcomingMatch.local}</p>
+                            <p class="text-gray-500">${nextMatch.local}</p>
                         </div>
                         <div class="text-right">
                              <p class="font-bold text-emerald-700 text-lg">${date.toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}</p>
@@ -321,8 +332,8 @@
                     <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><i class="ph ph-tennis-ball text-gray-500"></i></div>
                     <div>
                         <p class="text-gray-800">
-                            <span class="font-semibold">${winner.nickname || winner.name}</span> venceu
-                            <span class="font-semibold">${match.winner_uid === p1.uid ? (p2.nickname || p2.name) : (p1.nickname || p1.name)}</span>.
+                            <span class="font-semibold">${winner?.nickname || winner?.name}</span> venceu
+                            <span class="font-semibold">${match.winner_uid === match.participante1_uid ? (p2?.nickname || p2?.name) : (p1?.nickname || p1?.name)}</span>.
                         </p>
                         <p class="text-xs text-gray-500">Placar: ${match.score}</p>
                     </div>`;
